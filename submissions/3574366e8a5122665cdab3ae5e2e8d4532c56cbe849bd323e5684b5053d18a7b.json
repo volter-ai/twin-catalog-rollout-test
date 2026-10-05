@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "source": "portable-packs-rollout-test",
+  "vendor": "tavily",
+  "package": "@volter/twin-portable-rollout-test-tavily",
+  "version": "0.0.1",
+  "integrity": "sha512-PuY6zpb1qYaapBug8F69DJJkFssrHyHaJYSCl3ljhRcgylb4Mk9H7lHAJ8wbRf5qA7eJOa7cogt/X3cXSxGoxg=="
+}
