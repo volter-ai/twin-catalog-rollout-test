@@ -9,6 +9,8 @@ import { assessPullRequest, configure } from '../lib/automation.mjs';
 import { build, builtIndex, publish, verifyAdmission } from '../lib/publication.mjs';
 import { persistEvidence } from '../lib/evidence.mjs';
 import { propose } from '../lib/propose.mjs';
+import { browse } from '../lib/browse.mjs';
+import { register } from '../lib/register.mjs';
 
 const [command, ...args] = process.argv.slice(2);
 const arg = (name, fallback) => { const at = args.indexOf(`--${name}`); if (at < 0) return fallback; requireThat(args[at + 1] && !args[at + 1].startsWith('--'), `--${name} needs a value`); return args[at + 1]; };
@@ -19,6 +21,20 @@ const github = () => new GitHub(arg('repository', process.env.GITHUB_REPOSITORY 
 try {
   let result;
   switch (command) {
+    case 'browse': {
+      const indexRoot = args.includes('--root') || existsSync(join(root, 'catalog.json')) ? root : installed;
+      result = browse(indexRoot, { vendor: arg('vendor'), package: arg('package'), integrity: arg('integrity', null) });
+      break;
+    }
+    case 'register': {
+      const fork = existsSync(join(root, 'sources.json'));
+      const indexRoot = fork ? root : installed;
+      result = register(read(join(indexRoot, 'sources.json')), {
+        name: arg('source'), repository: arg('source-repository'), scope: arg('scope'),
+        official: args.includes('--official'), protocol: '3', workflow: arg('workflow', 'release.yml')
+      }, resolve(arg('out', join(root, fork ? 'sources.json' : 'registration/sources.json'))));
+      break;
+    }
     case 'submit': {
       const indexRoot = existsSync(join(root, 'sources.json')) ? root : installed;
       const p = policy();
@@ -57,7 +73,7 @@ try {
       result = await publish(output, policy().registry);
       break;
     }
-    default: throw new Error('usage: twin-catalog submit --source <id> --vendor <vendor> --package <@scope/name> --version <exact> | assess-pr --pr <number> | check | defaults | build --out <new-directory> | publish | configure [--apply]');
+    default: throw new Error('usage: twin-catalog register --source <id> --source-repository <owner/repo> --scope <@scope> [--out <sources.json>] | submit --source <id> --vendor <vendor> --package <@scope/name> --version <exact> | browse [--root <installed-index>] [--vendor <vendor>] [--package <@scope/name>] | assess-pr --pr <number> | check | defaults | build --out <new-directory> | publish | configure [--apply] | propose --from <submission-directory> --send');
   }
   console.log(JSON.stringify(result, null, 2));
 } catch (error) { console.error(`twin-catalog: ${error.message ?? error}`); process.exitCode = 1; }

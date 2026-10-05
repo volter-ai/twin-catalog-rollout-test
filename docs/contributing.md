@@ -61,6 +61,15 @@ postinstall having run there: distribute the needed portable build or choose sup
 ## Register and publish
 
 Register your public repository, npm scope and release workflow in a separate authorized `sources.json` PR; untrusted accounts need moderator review.
+In your catalog fork, prepare the one-source change using the catalog CLI:
+
+```sh
+twin-catalog register --source example-team --source-repository example/twins --scope @example --workflow release.yml
+```
+
+The command prepares data only and refuses conflicting registrations. Outside a fork it writes `registration/sources.json`;
+copy that file into your fork and open the separate PR. Registration does not authorize a release or grant maintainer status.
+
 Pin your own dependencies and commit the lock. Your workflow runs on GitHub-hosted Linux with `id-token: write`,
 builds your artifact, and uses npm trusted publishing or your own scoped npm credential:
 

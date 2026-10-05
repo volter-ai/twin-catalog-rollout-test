@@ -6,6 +6,13 @@
   "bin": {
     "twin-catalog": "bin/twin-catalog.mjs"
   },
+  "exports": {
+    "./browse": {
+      "types": "./lib/browse.d.mts",
+      "default": "./lib/browse.mjs"
+    },
+    "./*": "./*"
+  },
   "engines": {
     "node": ">=22.3"
   },
