@@ -1,21 +1,23 @@
-# Operate the public test catalog
+# Operate a catalog
 
-This procedure applies to `volter-ai/twin-catalog-rollout-test` and its trusted publisher `volter-ai/twin-packs-rollout-test`. It does not activate production or alter an existing World. The [process contract](process.md) owns admission authority; [contributor instructions](contributing.md) own independent publishing.
+Select the catalog and publisher repositories for the operation. Use the authorized production or test targets; these commands do not select public source scope or alter an existing World. The [process contract](process.md) owns admission authority; [contributor instructions](contributing.md) own independent publishing.
 
 ## Responsibilities and access
 
-`CODEOWNERS` and repository permissions name the moderators; current policy names `yueranyuan` for internal maintainer merges. The operator records an incident owner and GitHub failure-notification recipients in the handoff. Repository ownership alone does not prove notifications are configured. An untrusted outside contributor and a distinct authorized human moderator are required to rehearse the outside review path. A trusted-account rehearsal does not require that review.
+`CODEOWNERS` and repository permissions name the moderators; current policy names authorized maintainers and direct trusted accounts. The operator records an incident owner and GitHub failure-notification recipients in the handoff. Repository ownership alone does not prove notifications are configured. An untrusted outside contributor and a distinct authorized human moderator are required to rehearse the outside review path. A trusted-account rehearsal does not require that review.
 
-The catalog read App has administration, contents, checks and pull-request read access to the selected catalog. Its key is in `CATALOG_READ_APP_PRIVATE_KEY`; its client ID is a repository variable. The separate publisher App has contents and pull-request write access, without administration; its key is in `CATALOG_PR_APP_PRIVATE_KEY` in the trusted publisher. Both workflows mint target-scoped short-lived tokens and revoke them afterward. Contributors use their own GitHub and npm authority, never these keys. Registry publication uses trusted publishing or the configured `NPM_TOKEN`. Production credential scope is a separate activation decision.
+The catalog read App has administration, contents, checks and pull-request read access to the selected catalog. Its key is in `CATALOG_READ_APP_PRIVATE_KEY`; its client ID is a repository variable. The separate publisher App has contents and pull-request write access, without administration; its key is in `CATALOG_PR_APP_PRIVATE_KEY` in the trusted publisher. Both workflows mint target-scoped short-lived tokens and revoke them afterward. Contributors use their own GitHub and npm authority, never these keys. Registry publication uses trusted publishing or the configured `NPM_TOKEN`. Record registry package/workflow scope separately from GitHub App scope.
 
 ## Find and retain a failure
 
-List runs in the repository that owns the failed phase:
+Set the selected repository names, then list runs in the repository that owns the failed phase:
 
 ```sh
-gh run list --repo volter-ai/twin-packs-rollout-test --workflow release.yml
-gh run list --repo volter-ai/twin-catalog-rollout-test --workflow check.yml
-gh run list --repo volter-ai/twin-catalog-rollout-test --workflow publish.yml
+catalog_repository="<catalog-owner/catalog-repository>"
+publisher_repository="<publisher-owner/publisher-repository>"
+gh run list --repo "$publisher_repository" --workflow release.yml
+gh run list --repo "$catalog_repository" --workflow check.yml
+gh run list --repo "$catalog_repository" --workflow publish.yml
 ```
 
 Inspect the chosen run and retain its artifacts in a new directory:
@@ -32,14 +34,16 @@ Record source SHA, attempt, submission identity and PR head/base alongside the d
 An accepted upload is immutable. If `upload-accepted.json` exists, confirmation is unresolved, or an upload result is uncertain, never upload that version again. Inspect exact registry identity against retained bytes. A rerun of the original workflow uses `GITHUB_RUN_ATTEMPT > 1` and cannot upload:
 
 ```sh
-gh run rerun <publisher-run-id> --repo volter-ai/twin-packs-rollout-test --failed
+gh run rerun <publisher-run-id> --repo "$publisher_repository" --failed
 ```
 
-Its source, lock and rebuilt archive must still match the registry integrity. A mismatch refuses and needs investigation, not a changed version attached to old evidence. For retained-byte confirmation, use the exact trusted publisher checkout and its retained `release/` directory; point `CATALOG_CLI` at the exact installed released CLI and run `node scripts/publish.mjs --confirm-only`. This path performs reads and writes its receipt without upload or proposal credentials.
+Its source, lock and rebuilt archive must still match the registry integrity. A mismatch refuses and needs investigation, not a changed version attached to old evidence. For retained-byte confirmation in a publisher that implements the retained-byte recovery command, use its exact checkout and retained `release/` directory; point `CATALOG_CLI` at the exact installed released CLI and run `node scripts/publish.mjs --confirm-only`. This path performs reads and writes its receipt without upload or proposal credentials.
+
+Independent publishers may use different release tooling; they must preserve the same immutable bytes and read-only confirmation rule. The commands above describe the shipped Volter publisher workflow.
 
 A new first-attempt dispatch can upload an absent version. Use it only after evidence proves a prior failure happened before upload, or for a newly prepared immutable version. It is not the recovery command for an accepted or uncertain upload.
 
-Proposal recovery uses canonical retained submission JSON. The trusted workflow's `propose --send` returns the existing PR even if it is closed; it does not reopen it, approve it or create a duplicate. A rejected release is not silently resubmitted. Artifact fixes require a new version. A proposal transport failure needs no package upload.
+Proposal recovery uses canonical retained submission JSON. The publisher workflow's `propose --send` returns the existing PR even if it is closed; it does not reopen it, approve it or create a duplicate. A rejected release is not silently resubmitted. Artifact fixes require a new version. A proposal transport failure needs no package upload.
 
 ## Recover assessment
 
@@ -48,7 +52,7 @@ Preparation confirms both the exact-version registry view and npm's installation
 For an infrastructure failure, explicitly reassess the current PR:
 
 ```sh
-gh workflow run check.yml --repo volter-ai/twin-catalog-rollout-test --ref main -f pr=<pr-number>
+gh workflow run check.yml --repo "$catalog_repository" --ref main -f pr=<pr-number>
 ```
 
 The job uses trusted current source and reads candidate data at the exact head. A changed head or base needs fresh evidence. Check the resulting report and current-head readiness; an older success or local report is insufficient. Candidate defects need a new immutable package version. The automation neither approves nor merges.
@@ -60,7 +64,7 @@ Untrusted-account submissions need genuine current-head non-author human moderat
 Retry current protected main after resolving the recorded cause:
 
 ```sh
-gh workflow run publish.yml --repo volter-ai/twin-catalog-rollout-test --ref main
+gh workflow run publish.yml --repo "$catalog_repository" --ref main
 ```
 
 The workflow verifies admission and protection, then reuses a published version only when source and digest match. It cannot overwrite a conflicting identity. Retain the new receipt and compare registry integrity before calling the upload confirmed. No platform build, candidate test or hosted deployment is part of this job.
@@ -78,8 +82,8 @@ To withdraw an admitted release, append its exact package/version and a nonempty
 Pause future work without deleting artifacts or rewriting history:
 
 ```sh
-gh variable set PACK_PUBLISH_ENABLED --repo volter-ai/twin-packs-rollout-test --body false
-gh variable set CATALOG_PUBLISH_ENABLED --repo volter-ai/twin-catalog-rollout-test --body false
+gh variable set PACK_PUBLISH_ENABLED --repo "$publisher_repository" --body false
+gh variable set CATALOG_PUBLISH_ENABLED --repo "$catalog_repository" --body false
 ```
 
 These flags govern future jobs; they do not recall published packages or settle an in-flight upload. Preserve its receipts and inspect the outcome separately. Re-enable the intended flag only after the incident is resolved.

@@ -16,6 +16,16 @@ Register a source with a pull request adding one entry to `sources.json`:
 { "name": "example-team", "repository": "example/twins", "scope": "@example", "official": false, "protocol": "3", "workflow": "release.yml" }
 ```
 
+The CLI can prepare that addition in your catalog fork:
+
+```sh
+twin-catalog register --source example-team --source-repository example/twins --scope @example
+```
+
+It writes `sources.json` only. An installed CLI outside a fork writes `registration/sources.json`; use `--out` for
+another output path. Open a separate source-registration PR before submitting releases. A matching existing source
+is idempotent; conflicting registration data is refused.
+
 After registration merges, publish a package from that public repository with npm provenance. Its package.json names
 the registered repository; its generated pack facts name the vendor it simulates. A package may have any scoped npm
 name. Its artifact includes the source, spec and journeys required by the released Protocol 3 standard. Build against
@@ -57,9 +67,31 @@ node bin/twin-catalog.mjs build --out /tmp/new-catalog-output
 The build requires committed admission records and a new output directory. It generates data without importing packs.
 The website and hosted runtime consume this artifact independently; publishing it does not deploy either.
 
+For discovery, use the JSON-only reader against an installed index:
+
+```sh
+twin-catalog browse --root ./node_modules/@volter/twin-catalog-rollout-test
+twin-catalog browse --root ./node_modules/@volter/twin-catalog-rollout-test --vendor stripe
+```
+
+The `./browse` library export provides the same projection for a website build or another consumer:
+
+```js
+import { browse } from '@volter/twin-catalog-rollout-test/browse';
+const catalog = browse('./node_modules/@volter/twin-catalog-rollout-test');
+```
+
+Every implementation and recorded release remains visible. An ambiguous vendor has `selection.state: "choice-required"`.
+Filtering a package does not change the vendor's default. Revocation, selectability and assessment availability are
+separate fields. Bound report measurements retain their original scope; absent measurements are `null`. The reader
+checks snapshot and report digests without importing packs or reading Git history. `snapshot.integrity` is `null`
+unless the caller supplies retained installation evidence; the reader does not verify the package tarball. See
+[the read contract](docs/process.md#read-the-published-catalog). These new reader and registration examples are
+source documentation; their execution is not yet recorded.
+
 ## Operate admission
 
-The [operator procedure](docs/operations.md) covers phase diagnostics, retained-byte confirmation, assessment/index retries, recommendation and revocation, publication pause and credential replacement.
+The [operator procedure](docs/operations.md) covers failed phases, immutable retries, revocation and credential roles.
 
 `policy.json` pins released evaluator versions and the registry. Policy changes are separate moderator-reviewed PRs.
 The evaluator requires Docker on Linux with an x86-64 runner (the pinned Bun binary is linux-x64). Reports record the actual image identity and dependency lock, PR head/base,

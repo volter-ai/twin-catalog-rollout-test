@@ -238,6 +238,31 @@ concurrent work, commands and UTC observations; repeat it on a fresh sandbox ver
 
 ## Contribution and operation
 
+### Read the published catalog
+
+Catalog discovery reads an installed index package through `browse` or the package's `./browse` export. It reads
+JSON only, without Git, network access, platform login or candidate imports. The adapter checks the package/catalog
+source and digest against the index records and evidence references, then checks each bundled report against its
+recorded digest and release identity. Package tarball integrity remains the installer's responsibility; the caller
+may retain its verified lockfile integrity with the snapshot, but the adapter does not manufacture it.
+
+The projection preserves every implementation and version, including historical, pending, rejected and revoked
+records. Selectability, recorded status, assessment availability and default choice are separate fields. Selection
+uses the existing catalog default rule for each vendor. A vendor with competing packages remains browsable with
+`choice-required`; ambiguity does not hide the other vendors or compare versions across publishers.
+
+Measurements come only from checksum-bound catalog reports. Declared surface, dispatched operation coverage,
+journey failures, replay and browser execution retain their scopes and denominators. Missing measurements are
+`null`; coverage is never an admission score. Contribution links point to this catalog's repository and published
+instructions. This read projection grants no admission authority and does not replace the canonical schema-1 data.
+
+### Prepare a source registration
+
+`register` prepares the one-source addition to a selected catalog snapshot's `sources.json`. It validates the same
+source fields as assessment, refuses an existing conflicting source or a different output file, and writes data
+only. Run it in a fork or pass a new output path when using an installed package. Source registration remains a
+separate PR; the command neither publishes a package nor opens, approves or merges that PR.
+
 Contributors can create and index fixed pack files, derive their vendored spec, compile package facts and assess
 with released `twin-standard` commands. Contributors need a public source repository, their own scoped npm package and the released SDK/standard. No Volter
 checkout, private company record or particular pack-repository layout is required by the catalog. Source registration,
